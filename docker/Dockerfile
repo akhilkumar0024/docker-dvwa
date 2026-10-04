@@ -5,8 +5,8 @@ FROM php:${VERSION}-apache as builder
 RUN set -eux \
 	&& apt-get update \
 	&& apt-get install -y --no-install-recommends --no-install-suggests \
-		git \
-		ca-certificates \
+	git \
+	ca-certificates \
 	&& update-ca-certificates
 
 # Get DVWA
@@ -17,16 +17,17 @@ RUN set -eux \
 	&& rm -rf /DVWA/.gitignore \
 	&& rm -rf /DVWA/php.ini
 
-# Disable SQLITE
+# Disable SQLITE & strip port from session cookie domain
 RUN set -eux \
 	&& sed -i'' "s/if (\$_DVWA\['SQLI_DB'\]/if ('no'/g" /DVWA/dvwa/includes/dvwaPage.inc.php \
-	&& sed -i'' 's/[[:space:]]SQLITE)/"SQLITE")/g' /DVWA/dvwa/includes/dvwaPage.inc.php
+	&& sed -i'' 's/[[:space:]]SQLITE)/"SQLITE")/g' /DVWA/dvwa/includes/dvwaPage.inc.php \
+	&& sed -i'' "s/'domain'[[:space:]]*=>.*/'domain' => '',/g" /DVWA/dvwa/includes/dvwaPage.inc.php
 
 # Get Adminer
 RUN set -eux \
 	&& URL="$( \
-		curl -sS --fail -k https://www.adminer.org/ \
-		| grep -Eo 'https://github.com/vrana/adminer/releases/download/v[.0-9]+/adminer-[.0-9]+-mysql-en.php' \
+	curl -sS --fail -k https://www.adminer.org/ \
+	| grep -Eo 'https://github.com/vrana/adminer/releases/download/v[.0-9]+/adminer-[.0-9]+-mysql-en.php' \
 	)" \
 	&& curl -sS --fail -k -L "${URL}" > /adminer.php
 
@@ -38,8 +39,8 @@ FROM php:${VERSION}-apache
 RUN set -eux \
 	&& apt-get update \
 	&& apt-get install -y --no-install-recommends --no-install-suggests \
-		libpng-dev \
-		ca-certificates \
+	libpng-dev \
+	ca-certificates \
 	&& update-ca-certificates \
 	&& docker-php-ext-install gd \
 	&& docker-php-ext-install mysqli \
@@ -51,12 +52,12 @@ RUN set -eux \
 RUN set -eux \
 	&& apt-get update \
 	&& apt-get install -y --no-install-recommends --no-install-suggests \
-		iputils-ping \
-		netcat \
-		python3 \
-		strace \
-		sudo \
-		telnet \
+	iputils-ping \
+	netcat \
+	python3 \
+	strace \
+	sudo \
+	telnet \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
@@ -69,10 +70,10 @@ COPY ./entrypoint.sh/ /entrypoint.sh
 # Configure PHP
 RUN set -eux \
 	&& { \
-		echo "allow_url_include = on"; \
-		echo "allow_url_fopen   = on"; \
-		echo "error_reporting   = E_ALL | E_STRICT"; \
-		echo "magic_quotes_gpc  = off"; \
+	echo "allow_url_include = on"; \
+	echo "allow_url_fopen   = on"; \
+	echo "error_reporting   = E_ALL | E_STRICT"; \
+	echo "magic_quotes_gpc  = off"; \
 	} > /usr/local/etc/php/conf.d/default.ini
 
 # Adjust permissions
