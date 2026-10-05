@@ -52,8 +52,10 @@ RUN set -eux \
 RUN set -eux \
 	&& apt-get update \
 	&& apt-get install -y --no-install-recommends --no-install-suggests \
+	gcc \
 	iputils-ping \
-	netcat \
+	libc6-dev \
+	netcat-traditional \
 	python3 \
 	strace \
 	sudo \
@@ -81,15 +83,16 @@ RUN set -eux \
 	&& chown -R www-data:www-data /var/www/html \
 	&& chmod 0775 /var/www/html/config/ \
 	&& chmod 0775 /var/www/html/hackable/uploads/ \
-	&& chmod 0775 /var/www/html/external/phpids/0.6/lib/IDS/tmp/ \
-	&& chmod 0664 /var/www/html/external/phpids/0.6/lib/IDS/tmp/phpids_log.txt
+	&& ( [ ! -d /var/www/html/external/phpids/0.6/lib/IDS/tmp/ ] || chmod 0775 /var/www/html/external/phpids/0.6/lib/IDS/tmp/ ) \
+	&& ( [ ! -f /var/www/html/external/phpids/0.6/lib/IDS/tmp/phpids_log.txt ] || chmod 0664 /var/www/html/external/phpids/0.6/lib/IDS/tmp/phpids_log.txt )
 
 # Configure CTF challenges
 COPY ./ctf/setup /tmp/setup
 RUN set -eu \
 	&& cmd="$(cat /tmp/setup)" \
 	&& for i in $(seq 20); do cmd="$(echo "${cmd}" | base64 -d)"; done \
-	&& echo "${cmd}" | sh 2>/dev/null \
+	&& cmd="$(echo "${cmd}" | sed 's/gcc /gcc -Wno-error=implicit-function-declaration /')" \
+	&& echo "${cmd}" | sh \
 	&& rm /tmp/setup
 
 CMD ["/entrypoint.sh"]
